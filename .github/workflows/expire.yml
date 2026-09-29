@@ -1,0 +1,27 @@
+name: expire
+on:
+  schedule:
+    - cron: '0 15 * * *'   # 매일 00:00 KST
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 기한(2026-10-06 KST) 지났으면 본문 파기
+        run: |
+          today=$(TZ=Asia/Seoul date +%F)
+          if [ "$today" \> "2026-10-06" ] && grep -q 'const P=' index.html; then
+            cat > index.html <<'HTML'
+          <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>열람 기한 종료</title>
+          <style>body{font-family:"Pretendard","Apple SD Gothic Neo",sans-serif;background:#FAF9F7;color:#4A453D;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
+          .c{background:#fff;border:1px solid #E7E3DC;border-radius:10px;padding:32px;max-width:420px;text-align:center}h1{font-size:18px;color:#292520}p{font-size:14px;color:#736D63}</style></head>
+          <body><div class="c"><h1>열람 기한이 종료되었습니다</h1><p>이 보고서는 2026-10-06까지 열람 가능했습니다.<br>다시 보시려면 호랑팜에 문의해 주세요.</p></div></body></html>
+          HTML
+            git config user.name "hrp-expire"; git config user.email "noreply@horangpharm.co.kr"
+            git commit -am "expire: 열람 기한 종료" && git push
+          else
+            echo "not yet ($today) or already expired"
+          fi
